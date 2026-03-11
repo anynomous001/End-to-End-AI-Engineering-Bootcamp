@@ -2,7 +2,20 @@
 
 Welcome to the prerequisites repository for the [End-to-End AI Engineering Bootcamp](https://maven.com/swirl-ai/end-to-end-ai-engineering)! This repository is dedicated to setting up your development environment and scafoling a simple project with a StreamLit UI frontend service decoupled from FastAPI server.
 
-We strongly recomend you coding along the videos available on Maven platform rather than just cloning the repository and running the code.
+We strongly recomend you coding along the videos available in our YouTube channel rather than just cloning the repository and running the code.
+
+---
+
+[Video 1](https://youtu.be/3WsEgLtwsGs): Setting up your development environment
+
+[Video 2](https://youtu.be/cGOGA7GFecI): Build and containerise your first chatbot
+
+[Video 3](https://youtu.be/bZHaCAFAUCs): Moving the agent behind a FastAPI server
+
+[Video 4](https://youtu.be/IcbzksbMhuM): Containerising Backend and Frontend
+
+---
+
 
 If you do need to run the code, this is how:
 

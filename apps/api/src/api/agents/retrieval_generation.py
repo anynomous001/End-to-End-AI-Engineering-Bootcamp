@@ -1,4 +1,4 @@
-
+import os
 from qdrant_client import QdrantClient
 from openai import OpenAI
 from groq import Groq
@@ -13,7 +13,18 @@ openrouter_client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=config.OPENROUTER_API_KEY
 )
-qdrant_client = QdrantClient(host="qdrant", port=6333)
+import socket
+
+def get_qdrant_host():
+    if "QDRANT_HOST" in os.environ:
+        return os.environ["QDRANT_HOST"]
+    try:
+        socket.gethostbyname("qdrant")
+        return "qdrant"
+    except socket.error:
+        return "localhost"
+
+qdrant_client = QdrantClient(host=get_qdrant_host(), port=6333)
 groq_client = Groq(api_key=config.GROQ_API_KEY)
 
 

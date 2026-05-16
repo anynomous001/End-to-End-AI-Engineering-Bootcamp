@@ -8,7 +8,8 @@ from langsmith import traceable, get_current_run_tree
 from pydantic import BaseModel, Field
 import instructor
 import numpy as np
-from qdrant_client.models import Filter, FieldCondition, MatchValue
+from qdrant_client.models import Filter, FieldCondition, MatchValue, Document, Prefetch, FusionQuery
+
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +92,23 @@ def retrieve_products(query: str, limit: int = 3):
     
     # 2. Search the Qdrant database for the closest matching vectors
     search_results = qdrant_client.query_points(
-        collection_name="products",
-        query=query_vector,
+        collection_name="Products-collection-01-hybrid-search",
+        prefetch=[
+            Prefetch(
+                query=query_vector,
+                using="text-embedding-3-small",
+                limit=20
+            ),
+            Prefetch(
+                query=Document(
+                    text=query,
+                    model="qdrant/bm25"
+                ),
+                using="bm25",
+                limit=20
+            )
+        ],
+        query=FusionQuery(fusion="rrf"),
         limit=limit
     )
 
@@ -233,8 +249,7 @@ def rag_pipeline(question: str, top_k: int = 5) -> str:
 
 def rag_pipeline_wrapper(question, top_k=5):
     
-    # We use the global get_qdrant_host() helper here to avoid the same local vs docker crash
-    qdrant_wrapper_client = QdrantClient(host=get_qdrant_host(), port=6333)
+ 
 
     result = rag_pipeline(question, top_k=top_k)
     
@@ -242,9 +257,10 @@ def rag_pipeline_wrapper(question, top_k=5):
     dummy_vector = np.zeros(1536).tolist()
     
     for item in result.get("references", []):
-        payload = qdrant_wrapper_client.query_points(
-            collection_name="products",
+        point_results = qdrant_client.query_points(
+            collection_name="Products-collection-01-hybrid-search",
             query=dummy_vector,
+            using="text-embedding-3-small",
             limit=1,
             with_payload=True,
             query_filter=Filter(
@@ -255,15 +271,18 @@ def rag_pipeline_wrapper(question, top_k=5):
                     )
                 ]
             )
-        ).points[0].payload
-        image_url = payload.get("image")
-        price = payload.get("price")
-        if image_url:
-            used_context.append({
-                "image_url": image_url,
-                "price": str(price) if price is not None else None,
-                "description": item.description
-            })
+        )
+        
+        if point_results.points:
+            payload = point_results.points[0].payload
+            image_url = payload.get("image")
+            price = payload.get("price")
+            if image_url:
+                used_context.append({
+                    "image_url": image_url,
+                    "price": str(price) if price is not None else None,
+                    "description": item.description
+                })
             
     return {
         "answer": result["answer"],

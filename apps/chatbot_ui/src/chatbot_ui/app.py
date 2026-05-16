@@ -37,15 +37,35 @@ def api_call(method, url, **kwargs):
 
 st.title("Shopping Assistant Chatbot")
 
-
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I assist you with products today?"}]
 
+if "used_context" not in st.session_state:
+    st.session_state.used_context = []
 
+# --- Sidebar logic ---
+st.sidebar.markdown("<h3 style='color: #ff4b4b; border-bottom: 2px solid #ff4b4b; padding-bottom: 5px; margin-bottom: 20px;'>Suggestions</h3>", unsafe_allow_html=True)
+
+# Create a placeholder in the sidebar for dynamic rendering
+sidebar_placeholder = st.sidebar.empty()
+
+def render_suggestions():
+    with sidebar_placeholder.container():
+        for item in st.session_state.used_context:
+            st.markdown(f"<small>{item.get('description', '')}</small>", unsafe_allow_html=True)
+            if item.get("image_url"):
+                st.image(item["image_url"], use_container_width=True)
+            if item.get("price"):
+                st.caption(f"Price: {item['price']} USD")
+            st.divider()
+
+# Initial render of sidebar suggestions (on reload)
+render_suggestions()
+
+# --- Main chat logic ---
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-
 
 if prompt := st.chat_input("Hello! How can I assist you with products today?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -57,6 +77,8 @@ if prompt := st.chat_input("Hello! How can I assist you with products today?"):
         
         if success:
             answer = response_data.get("answer", "No answer received.")
+            st.session_state.used_context = response_data.get("used_context", [])
+            render_suggestions()  # Dynamically update the sidebar
         else:
             answer = response_data.get("message", "An error occurred while connecting to the API.")
             

@@ -1,6 +1,6 @@
 from fastapi import Request, APIRouter
-from api.models import RAGRequest, RAGResponse
-from api.agents.retrieval_generation import rag_pipeline
+from api.models import RAGRequest, RAGResponse, RAGUsedContext
+from api.agents.retrieval_generation import rag_pipeline_wrapper
 from api.core.config import config
 
 import logging
@@ -19,11 +19,12 @@ def rag(
     payload: RAGRequest
 ) -> RAGResponse:
     
-    final_result = rag_pipeline(payload.query)  
+    answer = rag_pipeline_wrapper(payload.query)  
     
     return RAGResponse(
         request_id=request.state.request_id,
-        answer=final_result["answer"]
+        answer=answer["answer"],
+        used_context=[RAGUsedContext(**used_context) for used_context in answer["used_context"]]
     )
 
 api_router = APIRouter()

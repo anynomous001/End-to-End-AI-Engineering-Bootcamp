@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 import instructor
 import numpy as np
 from qdrant_client.models import Filter, FieldCondition, MatchValue, Document, Prefetch, FusionQuery
+from api.utils.prompt_management import build_prompt_jinja
 
 
 logger = logging.getLogger(__name__)
@@ -147,32 +148,7 @@ def process_context(context):
     run_type="prompt"
 )
 def build_prompt(preprocessed_context, question):
-    
-    prompt = f"""
-        You are a shopping assistant that can answer questions about the products in stock.
-
-        You will be given a question and a list of context.
-
-        Instructions:
-        - You need to answer the question based on the provided context only.
-        - Never use word context and refer to it as the available products.
-        - As an output you need to provide:
-
-        * The answer to the question based on the provided context.
-        * The list of the IDs of the chunks that were used to answer the question. Only return the ones that are used in the answer.
-        * Short description (1-2 sentences) of the item based on the description provided in the context.
-
-        - The short description should have the name of the item.
-        - The answer to the question should contain detailed information about the product and returned with detailed specification in bullet points.
-
-        Context:
-        {preprocessed_context}
-
-        Question:
-        {question}
-        """
-    
-    return prompt
+    return build_prompt_jinja(preprocessed_context, question)
 
 
 

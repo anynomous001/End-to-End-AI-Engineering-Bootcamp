@@ -3,7 +3,8 @@ from typing import Optional, List
 
 
 class RAGRequest(BaseModel):
-    query: str
+    query: str = Field(..., description="Query")
+    thread_id:str = Field(..., description="Thread ID")
 
 
 class RAGUsedContext(BaseModel):

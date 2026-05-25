@@ -19,6 +19,8 @@ services:
       - 8000:8000
     env_file:
       - .env
+    environment:
+      - POSTGRES_URL=postgresql://langgraph_user:langgraph_password@postgres:5432/langgraph_db
     restart: unless-stopped
     volumes:
       - ./apps/api/src:/app/apps/api/src
@@ -31,3 +33,17 @@ services:
     volumes:
       - ./qdrant_storage:/qdrant/storage:z
     restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_DB: langgraph_db
+      POSTGRES_USER: langgraph_user
+      POSTGRES_PASSWORD: langgraph_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    restart: unless-stopped
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+

@@ -10,6 +10,7 @@ class Config(BaseSettings):
     GROQ_API_KEY: str
     GOOGLE_API_KEY: str
     OPENROUTER_API_KEY: str
+    POSTGRES_URL: str = "postgresql://langgraph_user:langgraph_password@localhost:5433/langgraph_db"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

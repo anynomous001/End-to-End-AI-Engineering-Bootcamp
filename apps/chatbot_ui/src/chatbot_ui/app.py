@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import uuid
 from chatbot_ui.core.config import config
 
 
@@ -37,6 +38,9 @@ def api_call(method, url, **kwargs):
 
 st.title("Shopping Assistant Chatbot")
 
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = str(uuid.uuid4())
+
 if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I assist you with products today?"}]
 
@@ -62,6 +66,16 @@ def render_suggestions():
 # Initial render of sidebar suggestions (on reload)
 render_suggestions()
 
+# Sidebar reset controls
+st.sidebar.divider()
+if st.sidebar.button("New Chat", use_container_width=True):
+    st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I assist you with products today?"}]
+    st.session_state.used_context = []
+    st.session_state.thread_id = str(uuid.uuid4())
+    st.rerun()
+
+st.sidebar.caption(f"Active Thread: `{st.session_state.thread_id}`")
+
 # --- Main chat logic ---
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -73,7 +87,11 @@ if prompt := st.chat_input("Hello! How can I assist you with products today?"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        success, response_data = api_call("post", f"{config.API_URL}/api/v1/rag/", json={"query": prompt})
+        success, response_data = api_call(
+            "post", 
+            f"{config.API_URL}/api/v1/rag/", 
+            json={"query": prompt, "thread_id": st.session_state.thread_id}
+        )
         
         if success:
             answer = response_data.get("answer", "No answer received.")

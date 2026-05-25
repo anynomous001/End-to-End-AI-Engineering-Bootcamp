@@ -1,3 +1,4 @@
+from langgraph.checkpoint.postgres import PostgresSaver
 import logging
 import numpy as np
 from typing import List, Dict, Any
@@ -6,6 +7,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
+from api.core.config import config
 from api.agents.state import State, ToolCall, RAGUsedContext
 from api.agents.agents import agent_node, intent_router_node
 from api.agents.tools import get_formatted_context
@@ -78,7 +80,7 @@ graph = workflow.compile()
     name="run_agent",
     run_type="chain"
 )
-def run_agent(question: str) -> dict:
+def run_agent(question: str, thread_id: str) -> dict:
     initial_state = {
         "messages": [{
             "role": "user", 
@@ -87,8 +89,15 @@ def run_agent(question: str) -> dict:
         "iteration": 0,
         "available_tools": tools_description
     }
+    graph_config = {
+        "configurable": {
+            "thread_id": thread_id,
+        }
+    }
 
-    result = graph.invoke(initial_state)
+    with PostgresSaver.from_conn_string(config.POSTGRES_URL) as checkpointer:
+        graph_compiled = workflow.compile(checkpointer=checkpointer)
+        result = graph_compiled.invoke(initial_state, graph_config)
     return result
 
 
@@ -96,8 +105,8 @@ def run_agent(question: str) -> dict:
     name="rag_agent_wrapper",
     run_type="chain"
 )
-def rag_agent_wrapper(question: str, top_k: int = 5) -> dict:
-    result = run_agent(question)
+def rag_agent_wrapper(question: str, thread_id: str, top_k: int = 5) -> dict:
+    result = run_agent(question, thread_id)
     
     used_context = []
     dummy_vector = np.zeros(1536).tolist()

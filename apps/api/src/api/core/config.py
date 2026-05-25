@@ -1,8 +1,9 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
 
-# Load environment variables into os.environ so LangSmith and others can access them
-load_dotenv()
+# Walk up from this file to find .env (works regardless of working directory)
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
 class Config(BaseSettings):
     OPENAI_API_KEY: str

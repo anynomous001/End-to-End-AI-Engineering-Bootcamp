@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 
+from api.core.config import config  # must be first — loads .env before LangSmith/LangGraph init
 from api.endpoints import api_router
 from api.middleware import RequestIDMiddleware
 from fastapi.middleware.cors import CORSMiddleware
